@@ -147,10 +147,12 @@ class CompeetController extends Controller
 
     public function entryList(string $id)
     {
-        DB::select(
-            "select * from compeet
-            inner join user on user.id = compeet.competitor
-            where compeet.competition = ?",
+        return DB::select(
+            "select u.name, bt.brandtype as car from compeets cs
+            inner join users u on u.id = cs.competitor
+            inner join cars c on cs.car = c.cid
+            inner join brandtypes bt on c.brandtype = bt.bt_id
+            where cs.competition = ?",
             [$id]
         );
     }

@@ -48,7 +48,7 @@ Route::middleware(['auth:sanctum', Organiser::class])->group(function () {
     route::post("/competition", [CompetitionController::class, "store"]);
     route::get("/myCompetitions/{id}", [CompetitionController::class, "myCompetitions"]);
     route::delete("/cocaDestroy/{id}", [CompcategController::class, "destroy"]);
-    route::get("/entry-list/{id}", [Compeet::class, "entryList"]);
+    route::get("/entry-list/{id}", [CompeetController::class, "entryList"]);
 });
 
 Route::middleware(['auth:sanctum', Competitor::class])->group(function () {});
