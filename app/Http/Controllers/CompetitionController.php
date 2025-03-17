@@ -130,12 +130,28 @@ class CompetitionController extends Controller
     public function myCompetitions(string $id)
     {
         return DB::select(
-            "select coca_id as id, comp.event_name as compname, pl.place as place, comp.start_date as start, comp.end_date as end, cy.category as category from compcategs cc
-            inner join competitions comp on cc.competition = comp.comp_id
-            inner join places pl on comp.place = pl.plac_id
-            inner join categories cy on cc.category = cy.categ_id
-            where organiser = ?",
+            "select cs.comp_id as id, cs.event_name as compname, pl.place as place, cs.start_date as start, cs.end_date as end, GROUP_CONCAT(IFNULL(cy.category, 'N/A') ORDER BY cy.category SEPARATOR ', ') as category
+            from competitions cs
+            inner join compcategs cc on cc.competition = cs.comp_id
+            inner join places pl on cs.place = pl.plac_id
+            inner join categories cy on cc.category = cy.categ_id  
+            where organiser = ?
+            GROUP BY cs.comp_id, cs.event_name, pl.place, cs.start_date, cs.end_date",
             [$id]
+        );
+    }
+
+    public function mySelectedCompetitions(string $id, string $cid)
+    {
+        return DB::select(
+            "select cs.event_name as compname, pl.place as place, cs.start_date as start, cs.end_date as end, GROUP_CONCAT(IFNULL(cy.category, 'N/A') ORDER BY cy.category SEPARATOR ', ') as category, cs.description as description, cc.min_entry as min, cc.max_entry as max
+            from competitions cs
+            inner join compcategs cc on cc.competition = cs.comp_id
+            inner join places pl on cs.place = pl.plac_id
+            inner join categories cy on cc.category = cy.categ_id  
+            where organiser = ? and cs.comp_id = ?
+            GROUP BY cs.comp_id, cs.event_name, pl.place, cs.start_date, cs.end_date, cs.description, cc.min_entry, cc.max_entry",
+            [$id, $cid]
         );
     }
 }

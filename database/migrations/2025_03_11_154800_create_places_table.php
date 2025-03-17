@@ -18,37 +18,30 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Place::create([
-            'place' => 'Kanári szigetek',
-        ]);
-
-        Place::create([
-            'place' => 'Veszprém',
-        ]);
-
-        Place::create([
-            'place' => 'Karlstad',
-        ]);
-
-        Place::create([
-            'place' => 'Mikołajki',
-        ]);
-
-        Place::create([
-            'place' => 'Róma',
-        ]);
-
-        Place::create([
-            'place' => 'Zlín',
-        ]);
-
-        Place::create([
-            'place' => 'Ceredigion',
-        ]);
-
-        Place::create([
-            'place' => 'Zágráb',
-        ]);
+        Place::create(['place' => 'Bugyboréktő']);
+        Place::create(['place' => 'Ködpallag']);
+        Place::create(['place' => 'Zsindelyvár']);
+        Place::create(['place' => 'Lappantyószeg']);
+        Place::create(['place' => 'Löszlak']);
+        Place::create(['place' => 'Brekkerét']);
+        Place::create(['place' => 'Boglyaszentmárton']);
+        Place::create(['place' => 'Zsupposberek']);
+        Place::create(['place' => 'Kenderzug']);
+        Place::create(['place' => 'Morgósrév']);
+        Place::create(['place' => 'Lankásfölde']);
+        Place::create(['place' => 'Csipkéspatak']);
+        Place::create(['place' => 'Sárszokoly']);
+        Place::create(['place' => 'Zúgóbérc']);
+        Place::create(['place' => 'Fenyérlapos']);
+        Place::create(['place' => 'Pörcsmalom']);
+        Place::create(['place' => 'Ványadomb']);
+        Place::create(['place' => 'Nyűvösfalu']);
+        Place::create(['place' => 'Kátyaspuszta']);
+        Place::create(['place' => 'Bőgőstanya']);
+        Place::create(['place' => 'Dörgőháza']);
+        Place::create(['place' => 'Görbedék']);
+        Place::create(['place' => 'Vakvölgypatak']);
+        Place::create(['place' => 'Rögzug']);
     }
 
     /**

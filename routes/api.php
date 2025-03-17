@@ -12,7 +12,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Middleware\Admin;
 use App\Http\Middleware\Competitor;
 use App\Http\Middleware\Organiser;
-use App\Models\Compcateg;
+use App\Models\Compeet;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -48,7 +48,9 @@ Route::middleware(['auth:sanctum', Organiser::class])->group(function () {
     route::post("/competition", [CompetitionController::class, "store"]);
     route::get("/myCompetitions/{id}", [CompetitionController::class, "myCompetitions"]);
     route::delete("/cocaDestroy/{id}", [CompcategController::class, "destroy"]);
+    route::get("/entry-list/{id}", [Compeet::class, "entryList"]);
 });
+
 Route::middleware(['auth:sanctum', Competitor::class])->group(function () {});
 
 Route::get('/users', [UserController::class, 'index']);

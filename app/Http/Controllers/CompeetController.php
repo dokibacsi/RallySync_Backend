@@ -144,4 +144,14 @@ class CompeetController extends Controller
         $user = User::find($id);
         return $user->permission == 1;
     }
+
+    public function entryList(string $id)
+    {
+        DB::select(
+            "select * from compeet
+            inner join user on user.id = compeet.competitor
+            where compeet.competition = ?",
+            [$id]
+        );
+    }
 }
