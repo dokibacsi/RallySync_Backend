@@ -60,38 +60,21 @@ class CompetitionController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        // Validate input to ensure correct data
-        $validator = Validator::make($request->all(), [
-            'event_name'   => 'nullable|string|max:255',
-            'place'        => 'nullable|integer|exists:places,plac_id',
-            'organiser'    => 'nullable|integer|exists:users,id',
-            'description'  => 'nullable|string|max:255',
-            'start_date'   => 'nullable|date',
-            'end_date'     => 'nullable|date|after_or_equal:start_date',
-        ]);
+        // Verseny keresése
+        $competition = Competition::findOrFail($id);
 
-        if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()], 422);
-        }
+        // Versenyadatok módosítása
+        $competition->update($request->only([
+            'event_name',
+            'place',
+            'organiser',
+            'description',
+            'start_date',
+            'end_date'
+        ]));
 
-        // Get only provided fields and keep valid values (including 0)
-        $updateData = array_filter(
-            $request->only(['event_name', 'place', 'organiser', 'description', 'start_date', 'end_date']),
-            fn($value) => $value !== null
-        );
 
-        if (empty($updateData)) {
-            return response()->json(['message' => 'No data provided for update'], 400);
-        }
-
-        // Update the record in DB
-        $updated = DB::table('competitions')->where('comp_id', $id)->update($updateData);
-
-        if ($updated) {
-            return response()->json(['message' => 'Competition updated successfully']);
-        } else {
-            return response()->json(['message' => 'Competition not found or no changes made'], 404);
-        }
+        return response()->json(['message' => 'Verseny sikeresen frissítve!'], 200);
     }
 
     /**
@@ -99,8 +82,11 @@ class CompetitionController extends Controller
      */
     public function destroy(string $id)
     {
-        Competition::find($id)->delete();
+        Compcateg::where('competition', $id)->delete(); /* Megkeresi az adott versenyhez tartozó kategóriákat és törli őket */
+        Competition::find($id)->delete(); /* Megkeresi és törli magát a versenyt */
+        return response()->json(['message' => 'Verseny és kapcsolódó kategóriák sikeresen törölve!'], 200);
     }
+
 
     public function legtobbetSzervezo()
     {
@@ -141,17 +127,100 @@ class CompetitionController extends Controller
         );
     }
 
-    public function mySelectedCompetitions(string $id, string $cid)
+    public function mySelectedCompetition(string $cid)
     {
         return DB::select(
-            "select cs.event_name as compname, pl.place as place, cs.start_date as start, cs.end_date as end, GROUP_CONCAT(IFNULL(cy.category, 'N/A') ORDER BY cy.category SEPARATOR ', ') as category, cs.description as description, cc.min_entry as min, cc.max_entry as max
-            from competitions cs
-            inner join compcategs cc on cc.competition = cs.comp_id
-            inner join places pl on cs.place = pl.plac_id
-            inner join categories cy on cc.category = cy.categ_id  
-            where organiser = ? and cs.comp_id = ?
-            GROUP BY cs.comp_id, cs.event_name, pl.place, cs.start_date, cs.end_date, cs.description, cc.min_entry, cc.max_entry",
-            [$id, $cid]
+            "SELECT 
+            cs.event_name AS event_name, 
+            cs.place AS place, 
+            cs.start_date AS start_date, 
+            cs.end_date AS end_date, 
+            GROUP_CONCAT(DISTINCT cc.category ORDER BY cc.category SEPARATOR ', ') AS category, 
+            cs.description AS description, 
+            MIN(cc.min_entry) AS min_entry, 
+            MAX(cc.max_entry) AS max_entry, 
+            cs.organiser AS organiser
+        FROM competitions cs
+        LEFT JOIN compcategs cc ON cc.competition = cs.comp_id
+        LEFT JOIN categories cy ON cc.category = cy.categ_id  
+        WHERE cs.comp_id = ?
+        GROUP BY cs.comp_id, cs.event_name, cs.place, cs.start_date, cs.end_date, cs.description, cs.organiser",
+            [$cid]
+        );
+    }
+
+    public function myCompletedCompetitions(string $id)
+    {
+        return DB::select(
+            "select cs.comp_id as id, cs.event_name as compname, pl.place as place, cs.start_date as start, cs.end_date as end, 
+        GROUP_CONCAT(IFNULL(cy.category, 'N/A') ORDER BY cy.category SEPARATOR ', ') as category
+        from competitions cs
+        inner join compcategs cc on cc.competition = cs.comp_id
+        inner join places pl on cs.place = pl.plac_id
+        inner join categories cy on cc.category = cy.categ_id  
+        where organiser = ? and cs.end_date < NOW()
+        GROUP BY cs.comp_id, cs.event_name, pl.place, cs.start_date, cs.end_date",
+            [$id]
+        );
+    }
+
+    public function myCurrentlyCompetitions(string $id)
+    {
+        return DB::select(
+            "select cs.comp_id as id, cs.event_name as compname, pl.place as place, cs.start_date as start, cs.end_date as end, 
+        GROUP_CONCAT(IFNULL(cy.category, 'N/A') ORDER BY cy.category SEPARATOR ', ') as category
+        from competitions cs
+        inner join compcategs cc on cc.competition = cs.comp_id
+        inner join places pl on cs.place = pl.plac_id
+        inner join categories cy on cc.category = cy.categ_id  
+        where organiser = ? and (cs.start_date <= NOW() and cs.end_date >= NOW()) 
+        GROUP BY cs.comp_id, cs.event_name, pl.place, cs.start_date, cs.end_date",
+            [$id]
+        );
+    }
+
+    public function myUpcomingCompetitions(string $id)
+    {
+        return DB::select(
+            "select cs.comp_id as id, cs.event_name as compname, pl.place as place, cs.start_date as start, cs.end_date as end, 
+        GROUP_CONCAT(IFNULL(cy.category, 'N/A') ORDER BY cy.category SEPARATOR ', ') as category
+        from competitions cs
+        inner join compcategs cc on cc.competition = cs.comp_id
+        inner join places pl on cs.place = pl.plac_id
+        inner join categories cy on cc.category = cy.categ_id  
+        where organiser = ? and cs.start_date > NOW()
+        GROUP BY cs.comp_id, cs.event_name, pl.place, cs.start_date, cs.end_date",
+            [$id]
+        );
+    }
+
+    public function myCompetitionsOnSelectedDates(string $id, string $start, string $end)
+    {
+        return DB::select(
+            "select cs.comp_id as id, cs.event_name as compname, pl.place as place, cs.start_date as start, cs.end_date as end, 
+        GROUP_CONCAT(IFNULL(cy.category, 'N/A') ORDER BY cy.category SEPARATOR ', ') as category
+        from competitions cs
+        inner join compcategs cc on cc.competition = cs.comp_id
+        inner join places pl on cs.place = pl.plac_id
+        inner join categories cy on cc.category = cy.categ_id  
+        where organiser = ? and (cs.start_date <= ? and cs.end_date >= ?)
+        GROUP BY cs.comp_id, cs.event_name, pl.place, cs.start_date, cs.end_date",
+            [$id, $start, $end]
+        );
+    }
+
+    public function myCompetitionsOnSelectedPlace(string $id, string $place)
+    {
+        return DB::select(
+            "select cs.comp_id as id, cs.event_name as compname, pl.place as place, cs.start_date as start, cs.end_date as end, 
+        GROUP_CONCAT(IFNULL(cy.category, 'N/A') ORDER BY cy.category SEPARATOR ', ') as category
+        from competitions cs
+        inner join compcategs cc on cc.competition = cs.comp_id
+        inner join places pl on cs.place = pl.plac_id
+        inner join categories cy on cc.category = cy.categ_id  
+        where organiser = ? and cs.place = ?
+        GROUP BY cs.comp_id, cs.event_name, pl.place, cs.start_date, cs.end_date",
+            [$id, $place]
         );
     }
 }

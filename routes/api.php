@@ -49,6 +49,14 @@ Route::middleware(['auth:sanctum', Organiser::class])->group(function () {
     route::get("/myCompetitions/{id}", [CompetitionController::class, "myCompetitions"]);
     route::delete("/cocaDestroy/{id}", [CompcategController::class, "destroy"]);
     route::get("/entry-list/{id}", [CompeetController::class, "entryList"]);
+    route::get("/my-selected-competition/{id}", [CompetitionController::class, "mySelectedCompetition"]);
+    route::put("/update-competition/{id}", [CompetitionController::class, "update"]);
+    route::delete("/delete-competition/{id}", [CompetitionController::class, "destroy"]);
+    route::get("/my-completed-competition/{id}", [CompetitionController::class, "myCompletedCompetitions"]);
+    route::get("/my-currently-competition/{id}", [CompetitionController::class, "myCurrentlyCompetitions"]);
+    route::get("/my-upcoming-competition/{id}", [CompetitionController::class, "myUpcomingCompetitions"]);
+    route::get("/my-competition-on-selected-date/{id}/{start}/{end}", [CompetitionController::class, "myCompetitionsOnSelectedDates"]);
+    route::get("/my-competition-on-selected-place/{id}/{place}", [CompetitionController::class, "myCompetitionsOnSelectedPlace"]);
 });
 
 Route::middleware(['auth:sanctum', Competitor::class])->group(function () {});
