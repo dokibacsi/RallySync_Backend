@@ -26,12 +26,29 @@ class CompetitionController extends Controller
      */
     public function store(Request $request)
     {
-        //létrejön a competition!!!!
+        // Ellenőrizzük, hogy van-e validációs hiba
+        $request->validate([
+            'headerimage' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // max 2MB
+        ]);
+
+        // Létrehozzuk a versenyt
         $competition = new Competition();
-        $competition->fill($request->all());
-        //elmenti a versenyt!
+        $competition->fill($request->except('headerimage')); // Az image mezőt kivesszük
+
+
+        // Ha van feltöltött kép, akkor elmentjük
+        if ($request->hasFile('headerimage')) {
+            $file = $request->file('headerimage');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $file->move(public_path('uploads'), $filename);
+
+            // Az elérési út mentése az adatbázisba
+            $competition->headerimage = 'uploads/' . $filename;
+        }
+
         $competition->save();
-        //létrejön egy új compcateg
+
+        // Létrehozzuk a verseny kategóriákat
         foreach ($request["category"] as $category) {
             $cc = new Compcateg();
             $cc->fill($request->all());
@@ -39,6 +56,11 @@ class CompetitionController extends Controller
             $cc->category = $category;
             $cc->save();
         }
+
+        return response()->json([
+            'message' => 'Competition successfully created!',
+            'competition' => $competition
+        ], 201);
     }
 
     /**
@@ -70,7 +92,8 @@ class CompetitionController extends Controller
             'organiser',
             'description',
             'start_date',
-            'end_date'
+            'end_date',
+            'header_img'
         ]));
 
 
@@ -116,13 +139,13 @@ class CompetitionController extends Controller
     public function myCompetitions(string $id)
     {
         return DB::select(
-            "select cs.comp_id as id, cs.event_name as compname, pl.place as place, cs.start_date as start, cs.end_date as end, GROUP_CONCAT(IFNULL(cy.category, 'N/A') ORDER BY cy.category SEPARATOR ', ') as category
+            "select cs.comp_id as id, cs.event_name as compname, pl.place as place, cs.start_date as start, cs.end_date as end, GROUP_CONCAT(IFNULL(cy.category, 'N/A') ORDER BY cy.category SEPARATOR ', ') as category, cs.headerimage as headerimage
             from competitions cs
             inner join compcategs cc on cc.competition = cs.comp_id
             inner join places pl on cs.place = pl.plac_id
             inner join categories cy on cc.category = cy.categ_id  
             where organiser = ?
-            GROUP BY cs.comp_id, cs.event_name, pl.place, cs.start_date, cs.end_date",
+            GROUP BY cs.comp_id, cs.event_name, pl.place, cs.start_date, cs.end_date, cs.headerimage",
             [$id]
         );
     }
@@ -139,12 +162,13 @@ class CompetitionController extends Controller
             cs.description AS description, 
             MIN(cc.min_entry) AS min_entry, 
             MAX(cc.max_entry) AS max_entry, 
-            cs.organiser AS organiser
+            cs.organiser AS organiser,
+            cs.headerimage as headerimage
         FROM competitions cs
         LEFT JOIN compcategs cc ON cc.competition = cs.comp_id
         LEFT JOIN categories cy ON cc.category = cy.categ_id  
         WHERE cs.comp_id = ?
-        GROUP BY cs.comp_id, cs.event_name, cs.place, cs.start_date, cs.end_date, cs.description, cs.organiser",
+        GROUP BY cs.comp_id, cs.event_name, cs.place, cs.start_date, cs.end_date, cs.description, cs.organiser, cs.headerimage",
             [$cid]
         );
     }
@@ -152,14 +176,16 @@ class CompetitionController extends Controller
     public function myCompletedCompetitions(string $id)
     {
         return DB::select(
-            "select cs.comp_id as id, cs.event_name as compname, pl.place as place, cs.start_date as start, cs.end_date as end, 
-        GROUP_CONCAT(IFNULL(cy.category, 'N/A') ORDER BY cy.category SEPARATOR ', ') as category
+            "
+            select cs.comp_id as id, cs.event_name as compname, pl.place as place, cs.start_date as start, cs.end_date as end, 
+        GROUP_CONCAT(IFNULL(cy.category, 'N/A') ORDER BY cy.category SEPARATOR ', ') as category, cs.headerimage as headerimage
         from competitions cs
         inner join compcategs cc on cc.competition = cs.comp_id
         inner join places pl on cs.place = pl.plac_id
         inner join categories cy on cc.category = cy.categ_id  
         where organiser = ? and cs.end_date < NOW()
-        GROUP BY cs.comp_id, cs.event_name, pl.place, cs.start_date, cs.end_date",
+        GROUP BY cs.comp_id, cs.event_name, pl.place, cs.start_date, cs.end_date, cs.headerimage
+        ",
             [$id]
         );
     }
@@ -168,13 +194,13 @@ class CompetitionController extends Controller
     {
         return DB::select(
             "select cs.comp_id as id, cs.event_name as compname, pl.place as place, cs.start_date as start, cs.end_date as end, 
-        GROUP_CONCAT(IFNULL(cy.category, 'N/A') ORDER BY cy.category SEPARATOR ', ') as category
+        GROUP_CONCAT(IFNULL(cy.category, 'N/A') ORDER BY cy.category SEPARATOR ', ') as category, cs.headerimage as headerimage
         from competitions cs
         inner join compcategs cc on cc.competition = cs.comp_id
         inner join places pl on cs.place = pl.plac_id
         inner join categories cy on cc.category = cy.categ_id  
         where organiser = ? and (cs.start_date <= NOW() and cs.end_date >= NOW()) 
-        GROUP BY cs.comp_id, cs.event_name, pl.place, cs.start_date, cs.end_date",
+        GROUP BY cs.comp_id, cs.event_name, pl.place, cs.start_date, cs.end_date, cs.headerimage",
             [$id]
         );
     }
@@ -183,13 +209,13 @@ class CompetitionController extends Controller
     {
         return DB::select(
             "select cs.comp_id as id, cs.event_name as compname, pl.place as place, cs.start_date as start, cs.end_date as end, 
-        GROUP_CONCAT(IFNULL(cy.category, 'N/A') ORDER BY cy.category SEPARATOR ', ') as category
+        GROUP_CONCAT(IFNULL(cy.category, 'N/A') ORDER BY cy.category SEPARATOR ', ') as category, cs.headerimage as headerimage
         from competitions cs
         inner join compcategs cc on cc.competition = cs.comp_id
         inner join places pl on cs.place = pl.plac_id
         inner join categories cy on cc.category = cy.categ_id  
         where organiser = ? and cs.start_date > NOW()
-        GROUP BY cs.comp_id, cs.event_name, pl.place, cs.start_date, cs.end_date",
+        GROUP BY cs.comp_id, cs.event_name, pl.place, cs.start_date, cs.end_date, cs.headerimage",
             [$id]
         );
     }
@@ -198,13 +224,13 @@ class CompetitionController extends Controller
     {
         return DB::select(
             "select cs.comp_id as id, cs.event_name as compname, pl.place as place, cs.start_date as start, cs.end_date as end, 
-        GROUP_CONCAT(IFNULL(cy.category, 'N/A') ORDER BY cy.category SEPARATOR ', ') as category
+        GROUP_CONCAT(IFNULL(cy.category, 'N/A') ORDER BY cy.category SEPARATOR ', ') as category, cs.headerimage as headerimage
         from competitions cs
         inner join compcategs cc on cc.competition = cs.comp_id
         inner join places pl on cs.place = pl.plac_id
         inner join categories cy on cc.category = cy.categ_id  
         where organiser = ? and (cs.start_date <= ? and cs.end_date >= ?)
-        GROUP BY cs.comp_id, cs.event_name, pl.place, cs.start_date, cs.end_date",
+        GROUP BY cs.comp_id, cs.event_name, pl.place, cs.start_date, cs.end_date, cs.headerimage",
             [$id, $start, $end]
         );
     }
@@ -212,14 +238,16 @@ class CompetitionController extends Controller
     public function myCompetitionsOnSelectedPlace(string $id, string $place)
     {
         return DB::select(
-            "select cs.comp_id as id, cs.event_name as compname, pl.place as place, cs.start_date as start, cs.end_date as end, 
-        GROUP_CONCAT(IFNULL(cy.category, 'N/A') ORDER BY cy.category SEPARATOR ', ') as category
+            "
+            select cs.comp_id as id, cs.event_name as compname, pl.place as place, cs.start_date as start, cs.end_date as end, 
+        GROUP_CONCAT(IFNULL(cy.category, 'N/A') ORDER BY cy.category SEPARATOR ', ') as category, cs.headerimage as headerimage
         from competitions cs
         inner join compcategs cc on cc.competition = cs.comp_id
         inner join places pl on cs.place = pl.plac_id
         inner join categories cy on cc.category = cy.categ_id  
         where organiser = ? and cs.place = ?
-        GROUP BY cs.comp_id, cs.event_name, pl.place, cs.start_date, cs.end_date",
+        GROUP BY cs.comp_id, cs.event_name, pl.place, cs.start_date, cs.end_date, cs.headerimage
+        ",
             [$id, $place]
         );
     }

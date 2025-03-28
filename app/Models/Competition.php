@@ -19,5 +19,6 @@ class Competition extends Model
         'description',
         'start_date',
         'end_date',
+        'headerimage'
     ];
 }
