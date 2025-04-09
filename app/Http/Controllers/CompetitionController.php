@@ -13,19 +13,8 @@ use Illuminate\Support\Facades\Validator;
 
 class CompetitionController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        return Competition::all();
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
+    public function index(){return Competition::all();}
+    public function store(Request $request){
         // Ellenőrizzük, hogy van-e validációs hiba
         $request->validate([
             'headerimage' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // max 2MB
@@ -60,28 +49,16 @@ class CompetitionController extends Controller
         return response()->json([
             'message' => 'Competition successfully created!',
             'competition' => $competition
-        ], 201);
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
+        ], 201);}
+    public function show(string $id){
         return DB::select('
         SELECT o.name, c.event_name, p.place, c.description, c.start_date, c.end_date
             FROM competitions c
             INNER JOIN places p ON c.place = p.plac_id
             INNER JOIN users o ON c.organiser = o.id
         WHERE c.organiser = ?
-    ', [$id]);
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
+    ', [$id]);}
+    public function update(Request $request, string $id){
         // Verseny keresése
         $competition = Competition::findOrFail($id);
 
@@ -97,47 +74,17 @@ class CompetitionController extends Controller
         ]));
 
 
-        return response()->json(['message' => 'Verseny sikeresen frissítve!'], 200);
-    }
+        return response()->json(['message' => 'Verseny sikeresen frissítve!'], 200);}
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        Compcateg::where('competition', $id)->delete(); /* Megkeresi az adott versenyhez tartozó kategóriákat és törli őket */
-        Competition::find($id)->delete(); /* Megkeresi és törli magát a versenyt */
-        return response()->json(['message' => 'Verseny és kapcsolódó kategóriák sikeresen törölve!'], 200);
-    }
+    public function destroy(string $id){
+        Compcateg::where('competition', $id)->delete(); 
+        Competition::find($id)->delete(); 
+        return response()->json(['message' => 'Verseny és kapcsolódó kategóriák sikeresen törölve!'], 200);}
 
-
-    public function legtobbetSzervezo()
-    {
-        return DB::select('
-        SELECT c.organiser, u.name, COUNT(*) AS competition_number
-        FROM competitions c
-        JOIN users u ON c.organiser = u.id
-        GROUP BY c.organiser, u.name
-        HAVING COUNT(*) = (
-            SELECT MAX(sub.competition_number)
-            FROM (
-                SELECT organiser, COUNT(*) AS competition_number
-                FROM competitions
-                GROUP BY organiser
-            ) AS sub
-        );
-    ');
-    }
-
-    //szervező-e a felhasználó
-    public function isOrganiser(string $id)
-    {
+    public function isOrganiser(string $id){
         $user = User::find($id);
-        return $user->permission == 2;
-    }
-
-    public function myCompetitions(string $id)
-    {
+        return $user->permission == 2;}
+    public function myCompetitions(string $id){
         return DB::select(
             "select cs.comp_id as id, cs.event_name as compname, pl.place as place, cs.start_date as start, cs.end_date as end, GROUP_CONCAT(IFNULL(cy.category, 'N/A') ORDER BY cy.category SEPARATOR ', ') as category, cs.headerimage as headerimage
             from competitions cs
@@ -147,11 +94,9 @@ class CompetitionController extends Controller
             where organiser = ?
             GROUP BY cs.comp_id, cs.event_name, pl.place, cs.start_date, cs.end_date, cs.headerimage",
             [$id]
-        );
-    }
+        );}
 
-    public function mySelectedCompetition(string $cid)
-    {
+    public function mySelectedCompetition(string $cid){
         return DB::select(
             "SELECT 
             cs.event_name AS event_name, 
@@ -170,11 +115,9 @@ class CompetitionController extends Controller
         WHERE cs.comp_id = ?
         GROUP BY cs.comp_id, cs.event_name, cs.place, cs.start_date, cs.end_date, cs.description, cs.organiser, cs.headerimage",
             [$cid]
-        );
-    }
+        );}
 
-    public function myCompletedCompetitions(string $id)
-    {
+    public function myCompletedCompetitions(string $id){
         return DB::select(
             "
             select cs.comp_id as id, cs.event_name as compname, pl.place as place, cs.start_date as start, cs.end_date as end, 
@@ -187,11 +130,9 @@ class CompetitionController extends Controller
         GROUP BY cs.comp_id, cs.event_name, pl.place, cs.start_date, cs.end_date, cs.headerimage
         ",
             [$id]
-        );
-    }
+        );}
 
-    public function myCurrentlyCompetitions(string $id)
-    {
+    public function myCurrentlyCompetitions(string $id){
         return DB::select(
             "select cs.comp_id as id, cs.event_name as compname, pl.place as place, cs.start_date as start, cs.end_date as end, 
         GROUP_CONCAT(IFNULL(cy.category, 'N/A') ORDER BY cy.category SEPARATOR ', ') as category, cs.headerimage as headerimage
@@ -202,11 +143,9 @@ class CompetitionController extends Controller
         where organiser = ? and (cs.start_date <= NOW() and cs.end_date >= NOW()) 
         GROUP BY cs.comp_id, cs.event_name, pl.place, cs.start_date, cs.end_date, cs.headerimage",
             [$id]
-        );
-    }
+        );}
 
-    public function myUpcomingCompetitions(string $id)
-    {
+    public function myUpcomingCompetitions(string $id){
         return DB::select(
             "select cs.comp_id as id, cs.event_name as compname, pl.place as place, cs.start_date as start, cs.end_date as end, 
         GROUP_CONCAT(IFNULL(cy.category, 'N/A') ORDER BY cy.category SEPARATOR ', ') as category, cs.headerimage as headerimage
@@ -217,11 +156,9 @@ class CompetitionController extends Controller
         where organiser = ? and cs.start_date > NOW()
         GROUP BY cs.comp_id, cs.event_name, pl.place, cs.start_date, cs.end_date, cs.headerimage",
             [$id]
-        );
-    }
+        );}
 
-    public function myCompetitionsOnSelectedDates(string $id, string $start, string $end)
-    {
+    public function myCompetitionsOnSelectedDates(string $id, string $start, string $end){
         return DB::select(
             "select cs.comp_id as id, cs.event_name as compname, pl.place as place, cs.start_date as start, cs.end_date as end, 
         GROUP_CONCAT(IFNULL(cy.category, 'N/A') ORDER BY cy.category SEPARATOR ', ') as category, cs.headerimage as headerimage
@@ -232,11 +169,9 @@ class CompetitionController extends Controller
         where organiser = ? and (cs.start_date <= ? and cs.end_date >= ?)
         GROUP BY cs.comp_id, cs.event_name, pl.place, cs.start_date, cs.end_date, cs.headerimage",
             [$id, $start, $end]
-        );
-    }
+        );}
 
-    public function myCompetitionsOnSelectedPlace(string $id, string $place)
-    {
+    public function myCompetitionsOnSelectedPlace(string $id, string $place){
         return DB::select(
             "
             select cs.comp_id as id, cs.event_name as compname, pl.place as place, cs.start_date as start, cs.end_date as end, 
@@ -249,6 +184,21 @@ class CompetitionController extends Controller
         GROUP BY cs.comp_id, cs.event_name, pl.place, cs.start_date, cs.end_date, cs.headerimage
         ",
             [$id, $place]
+        );}
+
+    public function legtobbetSzervezo(){
+        return DB::select('
+        SELECT c.organiser, u.name, COUNT(*) AS competition_number
+        FROM competitions c
+        JOIN users u ON c.organiser = u.id
+        GROUP BY c.organiser, u.name
+        HAVING COUNT(*) = (
+            SELECT MAX(sub.competition_number)
+            FROM (
+                SELECT organiser, COUNT(*) AS competition_number
+                FROM competitions
+                GROUP BY organiser
+            ) AS sub
         );
-    }
+    ');}
 }

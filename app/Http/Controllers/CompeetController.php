@@ -10,6 +10,41 @@ use Illuminate\Support\Facades\DB;
 
 class CompeetController extends Controller
 {
+    public function index(){return Compeet::all();}
+    public function store(Request $request){
+        if ($this->freeCar($request->car) && $this->isCompetitor($request->user)) {
+            $record = new Compeet();
+            $record->fill($request->all());
+            $record->save();
+        };}
+
+    public function show(string $id){return Compeet::find($id);}
+    public function update(Request $request, string $id){
+        $record = Compeet::find($id);
+        $record->fill($request->all());
+        $record->save();}
+    public function destroy(string $id){Compeet::find($id)->delete();}
+    public function freeCar(string $id){
+
+        $car = Car::find($id);
+        return $car->status == 1;}
+
+    public function isCompetitor(string $id){
+
+        $user = User::find($id);
+        return $user->permission == 1;}
+
+    public function entryList(string $id){
+        return DB::select(
+            "select u.name, bt.brandtype as car from compeets cs
+            inner join users u on u.id = cs.competitor
+            inner join cars c on cs.car = c.cid
+            inner join brandtypes bt on c.brandtype = bt.bt_id
+            where cs.competition = ?",
+            [$id]
+        );
+    }
+
     public function legtobbetHasznaltMarka()
     {
         return DB::select('
@@ -86,74 +121,5 @@ class CompeetController extends Controller
         GROUP BY co.event_name, c.category, cp.car;
 ');
     }
-    public function index()
-    {
-        return Compeet::all();
-    }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        if ($this->freeCar($request->car) && $this->isCompetitor($request->user)) {
-            $record = new Compeet();
-            $record->fill($request->all());
-            $record->save();
-        };
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        return Compeet::find($id);
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        $record = Compeet::find($id);
-        $record->fill($request->all());
-        $record->save();
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        Compeet::find($id)->delete();
-    }
-
-    //szabad-e az autó
-    public function freeCar(string $id)
-    {
-
-        $car = Car::find($id);
-        return $car->status == 1;
-    }
-
-    //versenyző-e a felhasználó
-    public function isCompetitor(string $id)
-    {
-
-        $user = User::find($id);
-        return $user->permission == 1;
-    }
-
-    public function entryList(string $id)
-    {
-        return DB::select(
-            "select u.name, bt.brandtype as car from compeets cs
-            inner join users u on u.id = cs.competitor
-            inner join cars c on cs.car = c.cid
-            inner join brandtypes bt on c.brandtype = bt.bt_id
-            where cs.competition = ?",
-            [$id]
-        );
-    }
 }

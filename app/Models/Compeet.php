@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class Compeet extends Model
 {
-    /** @use HasFactory<\Database\Factories\CompeetFactory> */
     use HasFactory;
 
     protected $primaryKey = 'cs_id';

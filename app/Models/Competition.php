@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class Competition extends Model
 {
-    /** @use HasFactory<\Database\Factories\CompetitionFactory> */
     use HasFactory;
 
     protected $primaryKey = 'comp_id';

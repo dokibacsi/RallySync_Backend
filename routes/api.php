@@ -44,15 +44,13 @@ Route::middleware(['auth:sanctum', Admin::class])->group(function () {
 Route::middleware(['auth:sanctum', Organiser::class])->group(function () {
     route::get("/places", [PlaceController::class, "index"]);
     route::get("/categories", [CategoryController::class, "index"]);
-    route::get("/versenyFelvisz", [CategoryController::class, "index"]);
     route::post("/competition", [CompetitionController::class, "store"]);
     route::get("/myCompetitions/{id}", [CompetitionController::class, "myCompetitions"]);
-    route::delete("/cocaDestroy/{id}", [CompcategController::class, "destroy"]);
     route::get("/entry-list/{id}", [CompeetController::class, "entryList"]);
     route::get("/my-selected-competition/{id}", [CompetitionController::class, "mySelectedCompetition"]);
     route::put("/update-competition/{id}", [CompetitionController::class, "update"]);
     route::delete("/delete-competition/{id}", [CompetitionController::class, "destroy"]);
-    route::put("/update-user/{id}", [CompetitionController::class, "update"]);
+    route::put("/update-user/{id}", [UserController::class, "update"]);
     route::get("/my-completed-competition/{id}", [CompetitionController::class, "myCompletedCompetitions"]);
     route::get("/my-currently-competition/{id}", [CompetitionController::class, "myCurrentlyCompetitions"]);
     route::get("/my-upcoming-competition/{id}", [CompetitionController::class, "myUpcomingCompetitions"]);
